@@ -59,6 +59,7 @@ int main(int argc, const char * argv[]){
     const char str0[] = "mkdir ";
     char str1[10];
     char str2[30];
+    printf("Making a directory: %d\n\n", mysystem("mkdir Folders"));
 
     input = fopen("names.txt", "r");
 
@@ -71,9 +72,10 @@ int main(int argc, const char * argv[]){
         strcpy(str2, buffer);
         // printf("%s/n", buffer);
         char* str = concatenate(str0, str1, str2);
-        printf("%s\n", str);
+        // printf("%s\n", str);
+        printf("Making folder: %d\n", mysystem(str));
         free(str);
-        fprintf(stdout, "\n");
+        // fprintf(stdout, "\n");
         // print(mysystem(""));
     }
     return 0;
