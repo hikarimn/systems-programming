@@ -5,12 +5,12 @@
 #include <unistd.h>
 #include <setjmp.h>
 #include <errno.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #define SLEEP 5
 
-sigjmp_buf tfgets_buf;
-// sigjpm_buf: store state information about the set of blocked signal
+sigjmp_buf tfgets_buf; // sigjpm_buf: store state information about the set of blocked signal
 
 typedef void handler_t(int);
 
@@ -55,8 +55,9 @@ char* tfgets(char* ch, int size, FILE *file){
 
 int main(int argc, char* argv[]){
     char buffer[256];
+    printf("Type your name within %d seconds:\n", SLEEP);
     if(tfgets(buffer, 256, stdin))
         printf("Hello %s", buffer);
     else
-        printf("timeout!");
+        printf("Timeout");
 }
