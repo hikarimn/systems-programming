@@ -56,11 +56,11 @@ char * concatenate(const char *a, const char *b, const char *d){
 int main(int argc, const char * argv[]){
     FILE* input;
     char buffer[62];
-    const char str0[] = "mkdir ";
+    const char str0[] = "mkdir -p ";
     char str1[10];
     char str2[30];
     printf("Making a directory: %d\n\n", mysystem("mkdir Folders"));
-
+   
     input = fopen("names.txt", "r");
 
     while(!feof(input)){
