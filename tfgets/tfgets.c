@@ -28,7 +28,7 @@ handler_t *Signal(int signum, handler_t *handler,int restart)
     struct sigaction action, old_action;
 
     action.sa_handler = handler;
-    sigemptyset(&action.sa_mask); /* Block sigs of type being handled */
+    sigemptyset(&action.sa_mask);  /* Block sigs of type being handled */
     if(restart)
       action.sa_flags = SA_RESTART;
     else
@@ -44,6 +44,10 @@ void sig_handler(int something){
 }
 
 char* tfgets(char* ch, int size, FILE *file){
+    /* transfers control directly from one function to another currently executing 
+function. The setjmp function saves the current calling environment in the env buffer,
+for later use by longjmp, and returns a 0.
+*/
     if(sigsetjmp(tfgets_buf, 1) == 0){
         Signal(SIGALRM, sig_handler, 0);
         alarm(SLEEP);
