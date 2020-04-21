@@ -14,21 +14,11 @@ int main(int argc, char *argv[]){
     struct stat st;
     char *bufp;
 
-    fd = open("hello.txt", O_RDONLY);
-
-    if (fd == -1)
-        printf("Error opening file for writing");
-    if (fstat(fd, &st) == -1)
-        printf("Error getting the file size");
-    if (st.st_size == 0)
-        printf("Error: File is empty");
-	if (mmap(bufp, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0) == NULL)
-        printf("Mmap error");
-    
+    fd = open("hello.txt", O_RDWR, 0);
+    fstat(fd, &st);
+    bufp = mmap(NULL, st.st_size, PROT_WRITE, MAP_SHARED, fd, 0);
     *bufp = 'J';
     munmap(bufp, st.st_size);
 
     exit(0);
 }
-
-
