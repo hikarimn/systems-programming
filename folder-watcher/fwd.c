@@ -34,6 +34,20 @@ int main(int argc, char **argv){
         // start <path>
         printf("%s\n", argv[1]); 
         int loop = 0;
+        char * mypid = malloc(6);   
+        sprintf(mypid, "%d", getpid());
+        printf( "%s\n", mypid);
+
+        FILE * fp;
+        fp = fopen("process_id.txt", "w");
+        if (fp == NULL){
+            printf("Unable to create file.\n");
+            exit(0);
+        }
+        fprintf(fp, "%s\n", mypid);
+        fclose(fp);
+        free(mypid);
+
         while (!done){
             printf("%ld %ld\n", (long)getpid(), (long)getppid());
             
@@ -52,7 +66,7 @@ int main(int argc, char **argv){
             struct tm dt_now;
             dt_now = *sTm;
           
-            fprintf(fp, "\nTime: %d-%d-%d %d:%d:%d\n", dt_now.tm_mday, dt_now.tm_mon, dt_now.tm_year + 1900, 
+            fprintf(fp, "Time: %d-%d-%d %d:%d:%d\n", dt_now.tm_mday, dt_now.tm_mon, dt_now.tm_year + 1900, 
                                                 dt_now.tm_hour, dt_now.tm_min, dt_now.tm_sec);
             fclose(fp);
 
@@ -69,10 +83,10 @@ int main(int argc, char **argv){
 
             while( (entry=readdir(folder)) ) {
                 files++;
-                printf("File %3d: %s\n", files, entry->d_name);
+                // printf("File %3d: %s\n", files, entry->d_name);
 
                 char* path_to_file = concatenate(argv[1], "/", entry->d_name);
-                printf( "%s\n", path_to_file);
+                // printf( "%s\n", path_to_file);
 
                 //Observing changes!
                 struct tm dt_modified;
@@ -94,8 +108,8 @@ int main(int argc, char **argv){
                             printf("Unable to create log file.\n");
                             exit(0);
                         }
-                        fprintf(fp, "\nFile Name: %s\n", entry->d_name);
-                        fprintf(fp, "\nModified on: %d-%d-%d %d:%d:%d\n", dt_modified.tm_mday, dt_modified.tm_mon, dt_modified.tm_year + 1900, 
+                        fprintf(fp, "File Name: %s\n", entry->d_name);
+                        fprintf(fp, "Modified on: %d-%d-%d %d:%d:%d\n", dt_modified.tm_mday, dt_modified.tm_mon, dt_modified.tm_year + 1900, 
                                               dt_modified.tm_hour, dt_modified.tm_min, dt_modified.tm_sec);
 
                         fclose(fp);
