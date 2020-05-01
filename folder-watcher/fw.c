@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <setjmp.h>
+#include <signal.h>
+
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -19,7 +21,7 @@ int main(int argc, char **argv){
             printf("%s\n", argv[2]); 
 
             int pid = getpid();
-            char * mypid = malloc(6);   // ex. 34567
+            char * mypid = malloc(6);   
             sprintf(mypid, "%d", pid);
 
             FILE * fp;
@@ -38,7 +40,6 @@ int main(int argc, char **argv){
             }
         } else if (strcmp(argv[0], "./fw" ) == 0 && strcmp(argv[1], "stop") == 0){
             printf("STOP\n");
-            // printf("%ld %ld\n", (long)getpid(), (long)getppid());
             printf("%s\n", argv[1]); 
 
             char *new_pid = NULL;
@@ -46,24 +47,18 @@ int main(int argc, char **argv){
             FILE *fp;
             if ((fp = fopen("process_id.txt", "r")) == NULL) {
                 printf("Error! opening file");
-                // Program exits if file pointer returns NULL.
                 exit(1);
             }
-            // fscanf(fp, "%[^\n]", new_pid);
             getline(&new_pid, &n, fp);
             printf("Data from the file:%s\n", new_pid);
             fclose(fp);
 
             printf("kill -SIGKILL %s\n",new_pid);
+            int new_pid_raw = atoi(new_pid);
+            int new_pid_int = (int)(new_pid_raw);
+            
+            kill(new_pid_int, SIGTERM);
             free(new_pid);
-            if (execve("kill -SIGKILL %s", &new_pid, environ) < 0){
-                fprintf(stderr, "execve sh error.\n");
-                exit(0);
-            }
-            // if (execve("./fwd", &argv[1], environ) < 0){
-            //     fprintf(stderr, "execve sh error.\n");
-            //     exit(0);
-            // }
         }
     } else {
         printf("argument list is empty.\n");
