@@ -5,13 +5,13 @@
 #include <setjmp.h>
 #include <signal.h>
 
-
 #include <sys/types.h>
 #include <sys/wait.h>
 
 #define DATA_SIZE 128
 #define MAXARGS 128  
 extern char *environ[];
+
 int mysystem(char** command){
     if(strcmp(command[0], "./fw" ) == 0 && strcmp(command[1], "start") == 0){
         pid_t pid;
@@ -47,7 +47,6 @@ int mysystem(char** command){
                 exit(1);
             }
             getline(&new_pid, &n, fp);
-            printf("Data from the file:%s\n", new_pid);
             fclose(fp);
 
             printf("kill -SIGKILL %s\n",new_pid);
