@@ -51,10 +51,7 @@ int main(int argc, char **argv){
             sTm = gmtime (&time_now);
             struct tm dt_now;
             dt_now = *sTm;
-            // char timeString[8];
-            // strftime(timeString, 8, "%H:%M:%S", sTm);
-            // fputs(timeString, fp);
-            // fprintf(fp, "\nTime: %d\n", dt_now);
+          
             fprintf(fp, "\nTime: %d-%d-%d %d:%d:%d\n", dt_now.tm_mday, dt_now.tm_mon, dt_now.tm_year + 1900, 
                                                 dt_now.tm_hour, dt_now.tm_min, dt_now.tm_sec);
             fclose(fp);
