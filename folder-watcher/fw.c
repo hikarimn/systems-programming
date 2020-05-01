@@ -12,19 +12,20 @@
 #define DATA_SIZE 128
 #define MAXARGS 128  
 extern char *environ[];
-
-int mysystem(char* command){
-    
-}
-    
-int main(int argc, char **argv){
-    if( argc >= 2 ){
-        if(strcmp(argv[0], "./fw" ) == 0 && strcmp(argv[1], "start") == 0){
+int mysystem(char** command){
+    if(strcmp(command[0], "./fw" ) == 0 && strcmp(command[1], "start") == 0){
+        pid_t pid;
+        pid = fork();
+        pid = getpid();
+        if(pid < 0){
+            fprintf(stderr, "execve sh error.\n");
+            exit(0);
+        } else if (pid == 0){
             printf("START\n");
             // printf("%ld %ld\n", (long)getpid(), (long)getppid());
-            printf("%s\n", argv[2]); 
+            printf("%s\n", command[2]); 
 
-            int pid = getpid();
+            // int pid = getpid();
             char * mypid = malloc(6);   
             sprintf(mypid, "%d", pid);
 
@@ -38,13 +39,25 @@ int main(int argc, char **argv){
             fclose(fp);
             free(mypid);
 
-            if (execve("./fwd", &argv[1], environ) < 0){
+            if (execve("./fwd", &command[1], environ) < 0){
                 fprintf(stderr, "execve sh error.\n");
                 exit(0);
             }
-        } else if (strcmp(argv[0], "./fw" ) == 0 && strcmp(argv[1], "stop") == 0){
+        }
+        int status;
+        if (waitpid(pid, &status, 0) < 0){
+            fprintf(stderr, "waitpid error.\n");
+            exit(0);
+        } 
+        if(WIFEXITED(status))
+            return WEXITSTATUS(status);
+        if(WIFSIGNALED(status))
+            return WTERMSIG(status);
+        return status;
+
+    } else if (strcmp(command[0], "./fw" ) == 0 && strcmp(command[1], "stop") == 0){
             printf("STOP\n");
-            printf("%s\n", argv[1]); 
+            printf("%s\n", command[1]); 
 
             char *new_pid = NULL;
             size_t n;
@@ -64,6 +77,12 @@ int main(int argc, char **argv){
             kill(new_pid_int, SIGTERM);
             free(new_pid);
         }
+    return 0;
+}
+    
+int main(int argc, char **argv){
+    if( argc >= 2 ){
+        mysystem(argv);
     } else {
         printf("argument list is empty.\n");
     }
