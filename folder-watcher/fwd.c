@@ -17,34 +17,6 @@
 volatile sig_atomic_t done = 0;
 extern char *environ[];
 
-int printFileProperties(struct stat stats){
-    struct tm dt;
-
-    // // File permissions
-    // printf("\nFile access: ");
-    // if (stats.st_mode & R_OK)
-    //     printf("read ");
-    // if (stats.st_mode & W_OK)
-    //     printf("write ");
-    // if (stats.st_mode & X_OK)
-    //     printf("execute");
-
-    // File size
-    // printf("\nFile size: %lld", stats.st_size);
-
-    // Get file creation time in seconds and 
-    // convert seconds to date and time format
-    // dt = *(gmtime(&stats.st_ctime));
-    // printf("\nCreated on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900, 
-    //                                           dt.tm_hour, dt.tm_min, dt.tm_sec);
-
-    // File modification time
-    dt = *(gmtime(&stats.st_mtime));
-    printf("\nModified on: %d-%d-%d %d:%d:%d\n", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900, 
-                                              dt.tm_hour, dt.tm_min, dt.tm_sec);
-    return 0;
-}
-
 char * concatenate(const char *a, const char *b, const char *d){
     size_t len = strlen(a) + strlen(b) + strlen(d);
     char* str = malloc(len+1);
@@ -57,7 +29,6 @@ char * concatenate(const char *a, const char *b, const char *d){
 }
 
 int main(int argc, char **argv){
-    
 
     if (argv[1] !=  NULL){
         // start <path>
@@ -68,7 +39,7 @@ int main(int argc, char **argv){
             
             // Recording time!
             FILE * fp;
-            fp = fopen("changes.txt", "w");
+            fp = fopen("changes.log", "a");
             if (fp == NULL){
                 printf("Unable to create log file.\n");
                 exit(0);
@@ -80,14 +51,13 @@ int main(int argc, char **argv){
             sTm = gmtime (&time_now);
             struct tm dt_now;
             dt_now = *sTm;
-            printf("\nCurrent Time: %d-%d-%d %d:%d:%d\n", dt_now.tm_mday, dt_now.tm_mon, dt_now.tm_year + 1900, 
-                                              dt_now.tm_hour, dt_now.tm_min, dt_now.tm_sec);
-            // printf("row time: %s\n", sTm);
-
-            // strftime (buff, sizeof(buff), "%Y-%m-%d %H:%M:%S", sTm);
-            // printf ("%s %s\n", buff, "Event occurred now");
-            // fprintf (fp,"%s %s\n", buff, "Event occurred now");
-            // fprintf(fp, "print this");
+            // char timeString[8];
+            // strftime(timeString, 8, "%H:%M:%S", sTm);
+            // fputs(timeString, fp);
+            // fprintf(fp, "\nTime: %d\n", dt_now);
+            fprintf(fp, "\nTime: %d-%d-%d %d:%d:%d\n", dt_now.tm_mday, dt_now.tm_mon, dt_now.tm_year + 1900, 
+                                                dt_now.tm_hour, dt_now.tm_min, dt_now.tm_sec);
+            fclose(fp);
 
             // Iterating through files!
             DIR *folder;
@@ -117,11 +87,22 @@ int main(int argc, char **argv){
                     // printFileProperties(stats);
                     time_modified = attr.st_mtime;
                     dt_modified = *(gmtime(&attr.st_mtime));
-                    printf("\nModified on: %d-%d-%d %d:%d:%d\n", dt_modified.tm_mday, dt_modified.tm_mon, dt_modified.tm_year + 1900, 
-                                              dt_modified.tm_hour, dt_modified.tm_min, dt_modified.tm_sec);
-
+                    
                     seconds = difftime(time_now, time_modified);
                     printf("Difference = %f\n", seconds);
+                    if(seconds < 5){
+                        FILE * fp;
+                        fp = fopen("changes.log", "a");
+                        if (fp == NULL){
+                            printf("Unable to create log file.\n");
+                            exit(0);
+                        }
+                        fprintf(fp, "\nFile Name: %s\n", entry->d_name);
+                        fprintf(fp, "\nModified on: %d-%d-%d %d:%d:%d\n", dt_modified.tm_mday, dt_modified.tm_mon, dt_modified.tm_year + 1900, 
+                                              dt_modified.tm_hour, dt_modified.tm_min, dt_modified.tm_sec);
+
+                        fclose(fp);
+                    }
 
                 } else {
                     printf("Unable to get file properties.\n");
@@ -140,7 +121,6 @@ int main(int argc, char **argv){
                 t = sleep(t);
             }
             printf("Finished loop run %d.\n", loop++);
-            fclose(fp);
         }
  
         printf("done.\n");
