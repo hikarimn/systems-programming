@@ -16,48 +16,28 @@ int mysystem(char** command){
     if(strcmp(command[0], "./fw" ) == 0 && strcmp(command[1], "start") == 0){
         pid_t pid;
         pid = fork();
-        pid = getpid();
         if(pid < 0){
-            fprintf(stderr, "execve sh error.\n");
-            exit(0);
+            fprintf(stderr, "fork error.\n");
+            exit(EXIT_FAILURE);
         } else if (pid == 0){
             printf("START\n");
-            // printf("%ld %ld\n", (long)getpid(), (long)getppid());
-            printf("%s\n", command[2]); 
-
-            // int pid = getpid();
-            char * mypid = malloc(6);   
-            sprintf(mypid, "%d", pid);
-
-            FILE * fp;
-            fp = fopen("process_id.txt", "w");
-            if (fp == NULL){
-                printf("Unable to create file.\n");
-                exit(0);
-            }
-            fputs(mypid, fp);
-            fclose(fp);
-            free(mypid);
+            // printf("%s\n", command[2]); 
 
             if (execve("./fwd", &command[1], environ) < 0){
                 fprintf(stderr, "execve sh error.\n");
                 exit(0);
             }
+            _exit(EXIT_SUCCESS);
+        } else {
+            int status;
+            (void)waitpid(pid, &status, 0);
         }
-        int status;
-        if (waitpid(pid, &status, 0) < 0){
-            fprintf(stderr, "waitpid error.\n");
-            exit(0);
-        } 
-        if(WIFEXITED(status))
-            return WEXITSTATUS(status);
-        if(WIFSIGNALED(status))
-            return WTERMSIG(status);
-        return status;
+    
+        return EXIT_SUCCESS;
 
     } else if (strcmp(command[0], "./fw" ) == 0 && strcmp(command[1], "stop") == 0){
             printf("STOP\n");
-            printf("%s\n", command[1]); 
+            // printf("%s\n", command[1]); 
 
             char *new_pid = NULL;
             size_t n;
@@ -76,7 +56,8 @@ int mysystem(char** command){
             
             kill(new_pid_int, SIGTERM);
             free(new_pid);
-        }
+    }
+    exit(0);
     return 0;
 }
     
