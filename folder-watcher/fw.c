@@ -12,12 +12,16 @@
 #define DATA_SIZE 128
 #define MAXARGS 128  
 extern char *environ[];
+
+int mysystem(char* command){
+    
+}
     
 int main(int argc, char **argv){
     if( argc >= 2 ){
         if(strcmp(argv[0], "./fw" ) == 0 && strcmp(argv[1], "start") == 0){
             printf("START\n");
-            printf("%ld %ld\n", (long)getpid(), (long)getppid());
+            // printf("%ld %ld\n", (long)getpid(), (long)getppid());
             printf("%s\n", argv[2]); 
 
             int pid = getpid();
