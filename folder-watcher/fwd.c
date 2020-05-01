@@ -49,31 +49,32 @@ int main(int argc, char **argv){
         free(mypid);
 
         while (!done){
-            printf("%ld %ld\n", (long)getpid(), (long)getppid());
+            // printf("%ld %ld\n", (long)getpid(), (long)getppid());
             
-            // Recording time!
+            // Recording time to log file
             FILE * fp;
             fp = fopen("changes.log", "a");
             if (fp == NULL){
                 printf("Unable to create log file.\n");
                 exit(0);
             }
-            char buff[20];
-            struct tm *sTm;
+            
+            struct tm *tm_now;
 
             time_t time_now = time (0);
-            sTm = gmtime (&time_now);
+            tm_now = gmtime (&time_now);
             struct tm dt_now;
-            dt_now = *sTm;
+            dt_now = *tm_now;
+
+            char time_buff[100];
+            strftime (time_buff, 100, "%Y-%m-%d %H:%M:%S.000", tm_now);
           
-            fprintf(fp, "Time: %d-%d-%d %d:%d:%d\n", dt_now.tm_mday, dt_now.tm_mon, dt_now.tm_year + 1900, 
-                                                dt_now.tm_hour, dt_now.tm_min, dt_now.tm_sec);
+            fprintf(fp, "Time: %s\n", time_buff);
             fclose(fp);
 
-            // Iterating through files!
+            // Iterating through files in directory
             DIR *folder;
             struct dirent *entry;
-            int files = 0;
 
             folder = opendir(argv[1]);
             if(folder == NULL) {
@@ -82,35 +83,38 @@ int main(int argc, char **argv){
             }
 
             while( (entry=readdir(folder)) ) {
-                files++;
-                // printf("File %3d: %s\n", files, entry->d_name);
 
                 char* path_to_file = concatenate(argv[1], "/", entry->d_name);
-                // printf( "%s\n", path_to_file);
 
-                //Observing changes!
+                //Observing changes on files
                 struct tm dt_modified;
+                struct tm *tm_modified;
                 struct stat attr;
                 double seconds;
                 time_t time_modified;
 
                 if (stat(path_to_file, &attr) == 0){
-                    // printFileProperties(stats);
                     time_modified = attr.st_mtime;
-                    dt_modified = *(gmtime(&attr.st_mtime));
+                    
                     
                     seconds = difftime(time_now, time_modified);
                     printf("Difference = %f\n", seconds);
-                    if(seconds < 5){
+                    if(seconds < 5){                    
+                        tm_modified = gmtime(&attr.st_mtime);
+                        dt_modified = *(gmtime(&attr.st_mtime));
+
                         FILE * fp;
                         fp = fopen("changes.log", "a");
                         if (fp == NULL){
                             printf("Unable to create log file.\n");
                             exit(0);
                         }
+
+                        char time_modified_buff[100];
+                        strftime (time_modified_buff, 100, "%Y-%m-%d %H:%M:%S.000", tm_modified);
+
                         fprintf(fp, "File Name: %s\n", entry->d_name);
-                        fprintf(fp, "Modified on: %d-%d-%d %d:%d:%d\n", dt_modified.tm_mday, dt_modified.tm_mon, dt_modified.tm_year + 1900, 
-                                              dt_modified.tm_hour, dt_modified.tm_min, dt_modified.tm_sec);
+                        fprintf(fp, "Modified at: %s\n", time_modified_buff);
 
                         fclose(fp);
                     }
@@ -120,12 +124,9 @@ int main(int argc, char **argv){
                     printf("Please check whether '%s' file exists.\n", path_to_file);
                 }
             }
-
             closedir(folder);
 
             int t = sleep(5);
-            /* sleep returns the number of seconds left if
-             * interrupted */
             while (t > 0) {
                 printf("Loop run was interrupted with %d "
                        "sec to go, finishing...\n", t);
@@ -139,8 +140,6 @@ int main(int argc, char **argv){
     } else {
         printf("argument list is empty.\n");
     }
-    printf("fwd\n"); 
-    
 
     return 0;
 }
