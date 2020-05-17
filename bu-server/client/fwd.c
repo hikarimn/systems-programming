@@ -9,6 +9,11 @@
 #include "csapp.h"
 
 int run;
+/* Locations of important files */
+const char* pidFileLoc = "/run/fwd.pid";
+const char* confFileLoc = "/etc/fwd.conf";
+const char* logFileLoc = "/var/log/fwd.log";
+FILE *logFile;
 
 void handleTERM(int x) {
   run = 0;
@@ -70,6 +75,50 @@ void check_file(char* dir,char* fileName,int time,int size) {
     if(serverTime < time)
       upload_file(dir,fileName,size);
 }  
+
+/*
+ * readConfig - read the configuration file
+ */
+int readConfig(char *path, char *address,char *port) {
+  FILE *config;
+
+  config = fopen(confFileLoc,"r");
+  if(config == NULL)
+    return -1;
+  fscanf(config,"%s",path);
+  fscanf(config,"%s",address);
+  fscanf(config,"%s",port);
+  fclose(config);
+  return 0;
+}
+
+/*
+ * logOpen - open the log file
+ */
+int logOpen() {
+  logFile = fopen(logFileLoc,"a");
+  if(logFile == NULL)
+    return -1;
+  return 0;
+}
+
+/* 
+ * logMessage - write a message to the log file
+ */
+void logMessage(char *msg) {
+  if(logFile != NULL) {
+   fprintf(logFile,"%s\n",msg);
+   fflush(logFile);
+  }
+}
+
+/*
+ * logClose - close the log file
+ */
+void logClose() {
+  if(logFile != NULL)
+    fclose(logFile);
+}
 
 int main(int argc, char **argv)
 {
