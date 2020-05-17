@@ -1,0 +1,11 @@
+[Unit]
+Description=Tiny web server
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/run/tiny.pid
+ExecStart=/usr/sbin/tinyd
+
+[Install]
+WantedBy=multi-user.target
