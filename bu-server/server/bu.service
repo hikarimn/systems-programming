@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=forking
 PIDFile=/run/bu.pid
-ExecStart=/usr/sbin/bud
+ExecStart=/usr/sbin/bu
 
 [Install]
 WantedBy=multi-user.target
