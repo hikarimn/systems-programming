@@ -1,8 +1,7 @@
-# makefile for fwd
+all: 
+	fwdd
 
-all: fwd 
-
-fw:fwd.c
+fwdd:	fwd.c
 	gcc fwd.c csapp.c -pthread -o fwdd
 
 install:
@@ -10,4 +9,4 @@ install:
 	rm -rf /var/fwd
 	mkdir /var/fwd
 	cp fwd.service lib/systemd/system/fwd.service
-	cp fwd /usr/sbin/fwdd
+	cp fwdd /usr/sbin/fwdd

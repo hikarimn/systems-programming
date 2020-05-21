@@ -1,6 +1,7 @@
-all: bu
+all:
+	bu
 
-bu: bu.c 
+bu:	bu.c 
 	gcc bu.c csapp.c -pthread -o bud
 
 install:
