@@ -1,0 +1,11 @@
+[Unit]
+Description=Bu web server
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/run/bu.pid
+ExecStart=/usr/sbin/bud
+
+[Install]
+WantedBy=multi-user.target
