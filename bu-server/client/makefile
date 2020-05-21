@@ -1,10 +1,13 @@
-all: fw fwd
+# makefile for fwd
 
-fw:fw.c
-	gcc fw.c -o fw
+all: fwd 
 
-fwd:fwd.c
-	gcc fwd.c csapp.c -pthread -o fwd
+fw:fwd.c
+	gcc fwd.c csapp.c -pthread -o fwdd
 
-clean:
-	rm fw; rm fwd; rm pid; rm fwd.log
+install:
+	cp fwd.conf /etc/fwd.conf
+	rm -rf /var/fwd
+	mkdir /var/fwd
+	cp fwd.service lib/systemd/system/fwd.service
+	cp fwd /usr/sbin/fwdd

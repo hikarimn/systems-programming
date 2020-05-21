@@ -15,9 +15,53 @@ const char* confFileLoc = "/etc/fwd.conf";
 const char* logFileLoc = "/var/log/fwd.log";
 FILE *logFile;
 
+/* Global SIGHUP received flag */
+static volatile sig_atomic_t hupReceived = 0;
+
 void handleTERM(int x) {
   run = 0;
 }
+
+/*
+ * becomeDaemon - convert this process to a daemon
+ */
+int becomeDaemon(char *home)
+{
+  int fd;
+  pid_t pid;
+  FILE* pidFile;
+
+  if((pid = Fork()) != 0) { /* Become background process */
+    exit(0);  /* Original parent terminates */
+  }
+
+  if(setsid() == -1) /* Become leader of new session */
+    return -1;
+
+  if((pid = Fork()) != 0) { /* Ensure we are not session leader */
+	/** Prepare pid file and terminate **/
+	pidFile = fopen(pidFileLoc,"w");
+	fprintf(pidFile,"%d",pid);
+	fclose(pidFile);
+    exit(0);
+  }
+
+  chdir(home); /* Change to home directory */
+
+  Close(STDIN_FILENO); /* Reopen standard fd's to /dev/null */
+
+  fd = Open("/dev/null", O_RDWR, 0);
+
+  if (fd != STDIN_FILENO)         /* 'fd' should be 0 */
+    return -1;
+  if (Dup2(STDIN_FILENO, STDOUT_FILENO) != STDOUT_FILENO)
+    return -1;
+  if (Dup2(STDIN_FILENO, STDERR_FILENO) != STDERR_FILENO)
+    return -1;
+
+  return 0;
+}
+
 
 void upload_file(char* dir,char* fileName,int filesize) {
     int srcfd, clientfd;
@@ -120,15 +164,48 @@ void logClose() {
     fclose(logFile);
 }
 
-int main(int argc, char **argv)
+void sighupHandler(int sig)
 {
-  struct sigaction action, old_action;
+    hupReceived = 1;
+}
+
+int main(int argc, char **argv){
+  struct sigaction action, old_action;    
+  char myPort[MAXLINE], myPath[MAXLINE], myAddress[MAXLINE];
   time_t timer;
   int buModTime;
   DIR* watchDIR;
   struct dirent* entp;
   struct stat s;
   char path[1024];
+  struct sigaction sa;
+
+/** Install SIGHUP handler **/
+	  sigemptyset(&sa.sa_mask);
+	  sa.sa_flags = SA_RESTART;
+	  sa.sa_handler = sighupHandler;
+	  if (sigaction(SIGHUP, &sa, NULL) == -1) {
+        fprintf(stderr, "Failed to install SIGHUP handler\n");
+        exit(1);
+      }
+
+    /* Read configuration information */
+    if(readConfig(myPath,myAddress,myPort) != 0) {
+        fprintf(stderr, "Failed to read config file\n");
+        exit(1);
+    }
+
+    /* Open log file */
+    if(logOpen() != 0) {
+        fprintf(stderr, "Could not open log file\n");
+        exit(1);
+    }
+
+    /* Switch to the background */
+	if(becomeDaemon(myPath) != 0) {
+        fprintf(stderr, "Failed becomeDaemon\n");
+	    exit(1);
+    }
 
   /* Install the handler for SIGTERM */
   action.sa_handler = handleTERM;
