@@ -1,0 +1,11 @@
+[Unit]
+Description=Fwd client
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/run/fwd.pid
+ExecStart=/usr/sbin/fwd
+
+[Install]
+WantedBy=multi-user.target
