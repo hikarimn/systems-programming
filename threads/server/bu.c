@@ -22,14 +22,34 @@ void serve_request(int connfd){
     int fd;
     struct stat s;
 
+    /** This code will break as soon as the user changes the path in the
+        configuration file. You need to replace "/var/bu" with the path
+        you read from the configuration file. Pass that path in as a
+        parameter to this function. **/
     strcpy(filePath, "/var/bu/");
     /* Read request */
     Rio_readinitb(&rio, connfd);
     if (!Rio_readlineb(&rio, buffer, MAXLINE))
         return;
     if (strcmp(buffer, "upload\n") == 0) {
+      /** You now have to handle multiple folders. The code you have here is still
+          the original code that assumes that all of the files the user sends you will
+          be dumped in /var/bu. Because fwd is now watching multiple folders, you
+          need a separate subfolder in /var/bu for each of the folders a user wants
+          to back up. This means that when a user sends you an upload request they
+          are going to be sending you both a folder name and a file name.
+
+          When you receive the folder name you also need to run a check to determine
+          whether a subdirectory of /var/bu exists that matches that folder name. If not,
+          you will need to use mkdir() to create it.
+
+          You need to have code here that reads both the folder name and the file name
+          from the client. In the code below where you assemble the path, you need to
+          concatenate filePath, the folder name, and the file name all together. **/
         Rio_readlineb(&rio, fileName, MAXLINE);
         Rio_readlineb(&rio, buffer, MAXLINE);
+        /** Since you are operating as a daemon now you can no longer use printf.
+            You should call the logMessage() function to save these messages to the log file. **/
         printf("Request to upload %s\n",fileName);
         strcat(filePath, fileName);
         printf("FilePath: %s\n",filePath);
@@ -45,6 +65,8 @@ void serve_request(int connfd){
         strcpy(buffer,"stored\n");
         Rio_writen(connfd,buffer,strlen(buffer));
     } else if(strcmp(buffer,"status\n") == 0) {
+      /** You have the same issue here. The client will send you both a folder name
+          and a file name. You need to put both of those into your path string. **/
         Rio_readlineb(&rio, fileName, MAXLINE);
         printf("Request to stat %s\n",fileName);
         strcat(filePath, fileName);
@@ -122,7 +144,7 @@ int logOpen() {
   return 0;
 }
 
-/* 
+/*
  * logMessage - write a message to the log file
  */
 void logMessage(char *msg) {
@@ -147,7 +169,7 @@ void logClose() {
 void *thread(void *vargp) {
     int connfd = *((int *)vargp);
     Pthread_detach(pthread_self()); //line:conc:echoservert:detach
-    Free(vargp);                    //line:conc:echoservert:free
+    Free(vargp);   /** Remove this statement. **/
     serve_request(connfd);
     Close(connfd);
     return NULL;
@@ -160,7 +182,7 @@ int main(int argc, char **argv){
     socklen_t clientlen;
     struct sockaddr_storage clientaddr;
     struct sigaction sa;
-    pthread_t tid; 
+    pthread_t tid;
 
     /** Install SIGHUP handler **/
 	  sigemptyset(&sa.sa_mask);
@@ -183,6 +205,8 @@ int main(int argc, char **argv){
         exit(1);
     }
 
+    /** I added this: **/ Sem_init(&mutex, 0, 1);
+
     /* Switch to the background */
 	if(becomeDaemon(myHome) != 0) {
         logMessage( "Failed becomeDaemon\n");
@@ -196,7 +220,11 @@ int main(int argc, char **argv){
         Getnameinfo((SA *) &clientaddr, clientlen, hostname, MAXLINE,
                     port, MAXLINE, 0);
         printf("Accepted connection from (%s, %s)\n", hostname, port);
-        
-        Pthread_create(&tid, NULL, thread, connfd);
+
+        Pthread_create(&tid, NULL, thread, connfd); /** Replace connfd with &connfd here. **/
+        Pthread_join(tid, NULL);
     }
 }
+
+
+
