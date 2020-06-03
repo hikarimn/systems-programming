@@ -93,13 +93,20 @@ int becomeDaemon(char *home)
   return 0;
 }
 
-
+/** You had
 void upload_file(char* dir,char* fileName,int filesize) {
+I fixed this. **/
+void upload_file(char* folder,char* dir,char* fileName,int filesize) {
     int srcfd, clientfd;
     char *host, *port, *cmd, *srcp;
     char buffer[256];
     rio_t rio;
 
+    /** This code will break as soon as the user changes the hostname or the
+        port listed in the configuration file. You should either make those two
+        strings be globals and read them once in the readConfig function, or
+        arrange to pass the correct values of host and port as parameters to this
+        function. **/
     host = "127.0.0.1";
     port = "8000";
     cmd = "upload\n";
@@ -107,6 +114,7 @@ void upload_file(char* dir,char* fileName,int filesize) {
     Rio_readinitb(&rio, clientfd);
 
     Rio_writen(clientfd, cmd, strlen(cmd));
+    /** You need to insert some code here that sends the folder name to the server. **/
     strcpy(buffer,fileName);
     strcat(buffer,"\n");
     Rio_writen(clientfd, buffer, strlen(buffer));
@@ -118,21 +126,25 @@ void upload_file(char* dir,char* fileName,int filesize) {
     strcat(buffer,fileName);
     srcfd = Open(buffer, O_RDONLY, 0);
     srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0);
-    Close(srcfd); 
+    Close(srcfd);
     Rio_writen(clientfd, srcp, filesize);
-    Munmap(srcp, filesize);          
+    Munmap(srcp, filesize);
 
 	Rio_readlineb(&rio, buffer, 256);
-	Close(clientfd); 
+	Close(clientfd);
 }
 
+/** You had
 void check_file(char* dir,char* fileName,int time,int size) {
+I fixed this. **/
+void check_file(char* dir,char* path,char* fileName,int time,int size) {
     int clientfd;
     char *host, *port, *cmd, *srcp;
     char buffer[256];
     rio_t rio;
     int serverTime;
 
+    /** Same comment as above. **/
     host = "127.0.0.1";
     port = "8000";
     cmd = "status\n";
@@ -140,22 +152,23 @@ void check_file(char* dir,char* fileName,int time,int size) {
     Rio_readinitb(&rio, clientfd);
 
     Rio_writen(clientfd, cmd, strlen(cmd));
+    /** You need to insert some code here that sends the dir name to the server. **/
     strcpy(buffer,fileName);
     strcat(buffer,"\n");
     Rio_writen(clientfd, buffer, strlen(buffer));
-    
+
 	Rio_readlineb(&rio, buffer, 256);
 	Close(clientfd);
     sscanf(buffer,"%d",&serverTime);
     if(serverTime < time)
-      upload_file(dir,fileName,size);
-}  
+      upload_file(dir,fileName,size); /** Should be upload_file(dir,path,fileName,size);
+}
 
 
 
 /*
 readConfig - read the configuration file
-A line for each directory fwd has to watch. 
+A line for each directory fwd has to watch.
 On that line will be the path to the directory in question, a space, and a name to use for the folder on the bu server.
 A blank line at the end end of the list of directories.
 The address of the bu server.
@@ -219,7 +232,7 @@ int logOpen() {
   return 0;
 }
 
-/* 
+/*
  * logMessage - write a message to the log file
  */
 void logMessage(char *msg) {
@@ -244,7 +257,7 @@ void sighupHandler(int sig){
 }
 
 void process(struct node *pointer){
-  struct sigaction action, old_action; 
+  struct sigaction action, old_action;
   DIR* watchDIR;
   struct dirent* entp;
   time_t timer;
@@ -254,6 +267,7 @@ void process(struct node *pointer){
   char * pathName = strtok(pointer->text," ");
   char * folderName = strtok(pointer->text," ");
 
+ /** The code starting here... **/
   /* Open log file */
     if(logOpen() != 0) {
         fprintf(stderr, "Could not open log file\n");
@@ -271,16 +285,18 @@ void process(struct node *pointer){
   sigemptyset(&action.sa_mask);
   action.sa_flags = 0;
   sigaction(SIGTERM, &action, &old_action);
+ /** ..down to here needs to go in main(), not here. This code will run for every
+     thread, and this code needs to run just once for the entire application. **/
 
   /* Run the initial scan. */
-  watchDIR = opendir(folderName);
+  watchDIR = opendir(folderName); /** Replace folderName with pathName here. **/
   while((entp = readdir(watchDIR))!=NULL) {
-    strcpy(path,folderName);
+    strcpy(path,folderName); /** Replace folderName with pathName here. **/
 	strcat(path,"/");
 	strcat(path,entp->d_name);
 	stat(path,&s);
 	/* Only pay attention to files, and ignore directories. */
-	if(S_ISREG(s.st_mode)) 
+	if(S_ISREG(s.st_mode))
 	  check_file(folderName,entp->d_name,s.st_mtime,s.st_size);
   }
   closedir(watchDIR);
@@ -292,9 +308,9 @@ void process(struct node *pointer){
     time(&timer);
     sleep(60);
     /* Scan the watched directory for changes. */
-    watchDIR = opendir(folderName);
+    watchDIR = opendir(folderName); /** Replace folderName with pathName here. **/
     while((entp = readdir(watchDIR))!=NULL) {
-      strcpy(path,folderName);
+      strcpy(path,folderName); /** Replace folderName with pathName here. **/
       strcat(path,"/");
       strcat(path,entp->d_name);
       stat(path,&s);
@@ -302,7 +318,7 @@ void process(struct node *pointer){
       if(S_ISREG(s.st_mode)) {
         /* Upload recently modified files. */
         if(difftime(s.st_mtime,timer) > 0) {
-          upload_file(folderName,entp->d_name,s.st_size);
+          upload_file(folderName,entp->d_name,s.st_size); /** This should be upload_file(folderName,pathName,entp->d_name,s.st_size); **/
         }
       }
     }
@@ -314,15 +330,16 @@ void process(struct node *pointer){
 
 void *thread(void *vargp){
   Pthread_detach(pthread_self());
-  Free(vargp); 
+  Free(vargp);
   process(currentNode);
   return NULL;
 }
 
-int main(int argc, char **argv){ 
+int main(int argc, char **argv){
   char myPort[MAXLINE], myPath[MAXLINE], myAddress[MAXLINE];
   struct sigaction sa;
   struct node *pointer;
+  pthread_t tid;
 
 /** Install SIGHUP handler **/
 	sigemptyset(&sa.sa_mask);
@@ -334,6 +351,7 @@ int main(int argc, char **argv){
   }
 
     // /* Read configuration information */
+  /** Change pointer to &pointer in the statement below. **/
   if(readConfig(myAddress, myPort, pointer) != 0) {
     fprintf(stderr, "Failed to read config file\n");
     exit(1);
@@ -344,12 +362,16 @@ int main(int argc, char **argv){
 
   currentNode = pointer;
 
-  while(currentNode->next != NULL) {
-    pthread_t tid;
-    Pthread_create(&tid, NULL, thread, NULL);
+  while(currentNode->next != NULL) { /** Should be while(currentNode != NULL) **/
+    Pthread_create(&tid, NULL, thread, NULL); /** The last parameter here should be currentNode, not NULL **/
+    /** Calling Pthread_join causes your program to block until
+        the thread you just started finishes. Since the thread you
+        just started is designed to run forever, you will stay blocked
+        here forever, and will never get a chance to launch a second or
+        later threads. The fix for this is to move this next statement
+        after the end of the loop. **/
     Pthread_join(tid, NULL);
-    exit(0);
     currentNode = currentNode->next;
   }
-    
+
 }
